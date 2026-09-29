@@ -23,7 +23,7 @@ const {
   BufferJSON,
   DisconnectReason,
   proto,
-} = require('@whiskeysockets/baileys');
+} = require('@xrelly-stack/bails');
 const pino = require('pino');
 const crypto = require('crypto');
 const chalk = require('chalk');
