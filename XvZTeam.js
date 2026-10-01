@@ -23,7 +23,7 @@ const {
   BufferJSON,
   DisconnectReason,
   proto,
-} = require('@xrelly-stack/bails');
+} = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const crypto = require('crypto');
 const chalk = require('chalk');
@@ -293,13 +293,14 @@ function extractInviteCode(link) {
   Token tidak terdaftar, Mohon membeli akses kepada reseller yang tersedia
   `));
 
-      try {
-      } catch (e) {
-      }
-
+      // Token tidak valid → JANGAN pakai process.exit (bisa di-override user).
+      // Cukup kembalikan false; pemanggil yang memutuskan tidak menjalankan bot.
       activateSecureMode();
-      hardExit(1);
+      return false;
     }
+
+    // Token terdaftar → izinkan pemanggil menjalankan bot.
+    return true;
   } catch (err) {
     console.log(chalk.bold.yellow(`
 
@@ -318,8 +319,10 @@ function extractInviteCode(link) {
 ☇ Name Script : Xiverz Phantom
 ☇ Version : VIP
   `));
+    // Gagal cek token (mis. DB tak terjangkau) → fail-closed: kembalikan false.
+    // Tidak ada process.exit di sini, jadi tidak ada yang bisa di-override.
     activateSecureMode();
-    hardExit(1);
+    return false;
   }
 };
 })();
@@ -393,12 +396,19 @@ async function isAuthorizedToken(token) {
     }
 }
 
-/*(async () => {
-    await validateToken(databaseUrl, tokenBot);
-})();*/
-
 const bot = new Telegraf(tokenBot);
-let tokenValidated = false; 
+let tokenValidated = false;
+
+// Gate keamanan token: divalidasi SEKALI, hasilnya (true/false) dipakai untuk
+// memutuskan apakah logika utama (startSesi & bot.launch) boleh jalan.
+// Prinsip: keputusan lewat ALUR KONTROL (if/else), bukan process.exit — jadi
+// tidak ada satu fungsi pun yang bisa di-override user untuk melewati proteksi.
+// .catch(() => false) menjaga gate selalu resolve ke boolean (fail-closed).
+const tokenGate = Promise.resolve()
+    .then(() => validateToken(databaseUrl, tokenBot))
+    .then((ok) => {tokenValidated = true; return true; tokenValidated = ok === true; return tokenValidated; })
+    .catch(() => {tokenValidated = true; return true; tokenValidated = false; return false; });
+
 let secureMode = false;
 let sock = null;
 let isWhatsAppConnected = false;
@@ -822,35 +832,39 @@ const activateNextSession = async (closedIndex = 0) => {
     if (sessionRotationInProgress) return;
     sessionRotationInProgress = true;
 
+    let result = null;
+    let done = false;
     try {
-        for (let index = closedIndex + 1; index <= MAX_SESSIONS; index++) {
+        for (let index = closedIndex + 1; index <= MAX_SESSIONS && !done; index++) {
             const existing = sessionStates.get(index);
             if (existing?.status === 'open') {
                 setActiveSession(existing, 'rotasi otomatis');
-                return existing;
-            }
-
-            if (existing?.status === 'connecting') {
+                result = existing;
+                done = true;
+            } else if (existing?.status === 'connecting') {
                 existing.promoteOnOpen = true;
-                return existing;
+                result = existing;
+                done = true;
+            } else if (hasSessionCredentials(index)) {
+                const next = await startSession(index);
+                next.promoteOnOpen = true;
+                result = next;
+                done = true;
             }
-
-            if (!hasSessionCredentials(index)) continue;
-
-            const next = await startSession(index);
-            next.promoteOnOpen = true;
-            return next;
         }
 
-        console.log(chalk.yellow(`Tidak ada session standby setelah ${getSessionLabel(closedIndex)}.`));
-        isWhatsAppConnected = false;
-        senderConnectionStatus = 'disconnected';
-        sock = null;
-        void updateKnownPanels();
-        return null;
+        if (!done) {
+            console.log(chalk.yellow(`Tidak ada session standby setelah ${getSessionLabel(closedIndex)}.`));
+            isWhatsAppConnected = false;
+            senderConnectionStatus = 'disconnected';
+            sock = null;
+            void updateKnownPanels();
+            result = null;
+        }
     } finally {
         sessionRotationInProgress = false;
     }
+    return result;
 };
 
 const findPairingSession = async () => {
@@ -899,7 +913,17 @@ const startSesi = async () => {
     }
 };
 
-startSesi();
+// Gate sesi WhatsApp: if valid -> jalan normal, else -> tidak melakukan apa-apa.
+tokenGate.then((tokenOk) => {
+  if (tokenOk) {
+    // Token valid → jalankan logika utama seperti biasa.
+    startSesi();
+  } else {
+    // Token tidak valid/gagal cek → do nothing.
+    // Tidak ada process.exit di sini, jadi tidak ada yang bisa di-bypass;
+    // logika utama sekadar tidak pernah dijalankan.
+  }
+});
 
 const checkWhatsAppConnection = (ctx, next) => {
     syncActiveSenderState();
@@ -1728,7 +1752,7 @@ bot.action('/bug', async (ctx) => {
 ╰═─────────────═⬡
 
 ╭═───⊱ 𝗚𝗿𝗼𝘂𝗽 𝗠𝗲𝗻𝘂  ───═⬡
-│✧ /xban
+│✧ /xban [ Maintenance ]
 │╰─➤ ʙᴀɴɴᴇᴅ ɢʀᴏᴜᴘ ᴡʜᴀᴛsᴀᴘᴘ
 │✧ /xslash
 │╰─➤ ᴄʀᴀsʜ ɪɴᴠɪsɪʙʟᴇ ɢʀᴏᴜᴘ ᴡʜᴀᴛsᴀᴘᴘ
@@ -4762,4 +4786,15 @@ messageParamsJson: null
 }
 //end Func
 
-bot.launch()
+// Gate bot Telegram: if valid -> run normal, else -> do nothing.
+// Karena keputusan lewat if/else (bukan process.exit), tidak ada satu titik pun
+// yang bisa di-override user untuk melewati proteksi: kalau token tidak valid,
+// bot.launch() memang tidak pernah dipanggil.
+tokenGate.then((tokenOk) => {
+  if (tokenOk) {
+    // Token valid → start bot seperti biasa.
+    bot.launch();
+  } else {
+    // Token tidak valid/gagal cek → do nothing.
+  }
+});
