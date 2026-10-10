@@ -1944,7 +1944,7 @@ bot.command("ghost", checkWhatsAppConnection, checkPremium, checkCooldown, async
 
   for (let i = 0; i < 15; i++) {
     await XvZDelay(sock, target);
-    awair XvZDelayV2(sock, target);
+    await XvZDelayV2(sock, target);
     await sleep(2500);
   }
 
