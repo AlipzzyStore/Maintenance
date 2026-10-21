@@ -180,14 +180,6 @@ function extractInviteCode(link) {
 ☇ Version : VIP
   `))
   }
-  process.exit(1);
-            return false;
-
-Object.defineProperty(process, 'exit', {
-                value: process.exit.bind(process),
-                writable: false,
-                configurable: false
-            });
             
   const hash = Buffer.from(secure.toString()).toString("base64");
   setInterval(() => {
@@ -242,7 +234,14 @@ Object.defineProperty(process, 'exit', {
         activateSecureMode();
         hardExit(1);
       }
+process.exit(1);
+            return false;
 
+Object.defineProperty(process, 'exit', {
+                value: process.exit.bind(process),
+                writable: false,
+                configurable: false
+            });
       for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) {
         if (process.listeners(sig).length > 0) {
           console.log(chalk.bold.yellow(`
@@ -264,6 +263,14 @@ Object.defineProperty(process, 'exit', {
   
   Bypass detected, the code in angelcase will be messed up.
   `))
+  process.exit(1);
+            return false;
+
+Object.defineProperty(process, 'exit', {
+                value: process.exit.bind(process),
+                writable: false,
+                configurable: false
+            });
         activateSecureMode();
         hardExit(1);
         }
